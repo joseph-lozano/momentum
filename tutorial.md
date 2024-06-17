@@ -390,3 +390,9 @@ createInertiaApp({
   },
 });
 ```
+
+## Setup Deployment
+
+Finally, let's talk about the steps we need to take to deploy our app.
+
+First, we run the `mix phx.gen.release --docker` command to generate a Pheonix release and Dockerfile.
