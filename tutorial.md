@@ -257,3 +257,136 @@ config :esbuild,
 
 With that we are ready to start the Phoenix server.
 `mix phx.server`, navigate to `localhost:4000` and you should see the home page we created in React!
+
+
+## Server Side Rendering
+
+InertiaJS has the ability to also server render our pages. This is great for SEO or low-bandwidth environments when we a page content's needs to be visible before JavaScript is loaded.
+
+NodeJS is required to be installed on your system to use server side rendering. As of this writing I am using Node 20.x
+
+To enable server side rendering, we need to add the `ssr: true` option to our `config/config.exs` file.
+```elixir
+# config/config.exs
+config :inertia,
+  endpoint: MomentumWeb.Endpoint,
+  ssr: true # <-- Change this line
+  # we also on want to raise on SSR failure, execpt in prod
+  raise_on_ssr_failure: config_env() != :prod
+```
+
+Next we need to create a new file, `assets/js/ssr.tsx`.
+
+```tsx
+// assets/js/ssr.tsx
+import ReactDOMServer from "react-dom/server";
+import { createInertiaApp } from "@inertiajs/react";
+import pages from "./pages";
+
+type Page = Parameters<typeof createInertiaApp>[0]["page"];
+export function render(page: Page) {
+  return createInertiaApp({
+    page,
+    render: ReactDOMServer.renderToString,
+    resolve: (name) => {
+      return pages[name as keyof typeof pages];
+    },
+    setup: ({ App, props }) => <App {...props} />,
+  });
+}
+```
+
+Next, we add an additioan set to our `esbuild` configuration to build our `ssr.tsx` file.
+Don't forget to switch platform to `node` in the `ssr` config.
+```elixir
+# config/config.exs
+config :esbuild,
+  version: "0.17.11",
+  momentum: [
+    args:
+      ~w(js/ssr.tsx --bundle --target=es2022 --platform=browser --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
+    cd: Path.expand("../assets", __DIR__),
+    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+  ],
+  # Add these lines
+  ssr: [
+    args:
+      ~w(js/ssr.tsx --bundle --target=es2022 --platform=node --outdir=../priv --external:/fonts/* --external:/images/*),
+    cd: Path.expand("../assets", __DIR__),
+    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+  ]
+```
+
+In dev mode, we want to add the `ssr` step our watchers.
+
+```elixir
+# config/dev.exs
+config :momentum, MomentumWeb.Endpoint,
+  http: [ip: {127, 0, 0, 1}, port: 4000],
+  check_origin: false,
+  code_reloader: true,
+  debug_errors: true,
+  secret_key_base: "zEYjYTxEPZNqEPJXC3sOiNtWnAJl0pBGhbi6Xst3wTZahHrfHEQH8K7KVHZgeajS",
+  watchers: [
+    esbuild: {Esbuild, :install_and_run, [:momentum, ~w(--sourcemap=inline --watch)]},
+    ssr: {Esbuild, :install_and_run, [:ssr, ~w(--sourcemap=inline --watch)]}, # <-- Add this line
+    tailwind: {Tailwind, :install_and_run, [:momentum, ~w(--watch)]}
+  ]
+```
+
+Since the outputted `priv/ssr.js` file is generated code, we should add it our `.gitignore` file
+```diff
+# .gitignore
+
++ priv/ssr.js
+```
+
+We also need to add the `ssr` step to our `assets.build` script.
+
+```elixir
+# mix.exs
+defp aliases do
+  [
+    setup: # ... unchanged
+    "assets.setup": # ...unchanged  
+    "assets.build": [
+      "tailwind momentum", 
+      "esbuild momentum", 
+      "esbuild ssr" # <-- Add this line
+      ],
+    "assets.deploy": # ...unchanged
+  ]
+end
+```
+
+Next, we need to add the SSR process pool to our supervision tree. 
+```elixir
+# lib/momentum_web/application.ex
+defmodule MomentumWeb.Application do
+  # ...
+  def start(_type, _args) do
+    children = [
+      # ...
+      {Inertia.SSR, path: Path.join([Application.app_dir(:momentum), "priv"])},
+    ]
+  end
+
+  # ... rest of the file
+end
+```
+
+Now, restart your server and head to http://localhost:4000! Check the network tab and and you should see our React rendered page come through in the initial request.
+
+As a final step though, we need to update our `app.tsx` file. Instead of calling `createRoot`, we want to call `hydrateRoot`.
+```diff
+// assets/js/app.tsx
+createInertiaApp({
+  resolve: (name) => {
+    return pages[name as keyof typeof pages];
+  },
+  setup({ el, App, props }) {
+-   createRoot(el).render(<App {...props} />);
++   hydrateRoot(el ,<App {...props} />);
+  },
+});
+```

@@ -23,7 +23,7 @@ config :momentum, MomentumWeb.Endpoint,
 
 config :inertia,
   endpoint: MomentumWeb.Endpoint,
-  ssr: false
+  ssr: true
 
 # Configures the mailer
 #
@@ -40,6 +40,12 @@ config :esbuild,
   momentum: [
     args:
       ~w(js/app.tsx --bundle --target=es2022 --platform=browser --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
+    cd: Path.expand("../assets", __DIR__),
+    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+  ],
+  ssr: [
+    args:
+      ~w(js/ssr.tsx --bundle --target=es2022 --platform=node --outdir=../priv --external:/fonts/* --external:/images/*),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
   ]

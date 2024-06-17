@@ -16,6 +16,7 @@ config :momentum, MomentumWeb.Endpoint,
   secret_key_base: "zEYjYTxEPZNqEPJXC3sOiNtWnAJl0pBGhbi6Xst3wTZahHrfHEQH8K7KVHZgeajS",
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:momentum, ~w(--sourcemap=inline --watch)]},
+    ssr: {Esbuild, :install_and_run, [:ssr, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:momentum, ~w(--watch)]}
   ]
 

@@ -24,7 +24,7 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 import { createInertiaApp } from "@inertiajs/react";
-import { createRoot } from "react-dom/client";
+import { hydrateRoot } from "react-dom/client";
 import pages from "./pages";
 
 let csrfToken = document.querySelector("meta[name='csrf-token']")?.getAttribute("content")
@@ -59,6 +59,6 @@ createInertiaApp({
     return pages[name as keyof typeof pages];
   },
   setup({ el, App, props }) {
-    createRoot(el).render(<App {...props} />);
+    hydrateRoot(el ,<App {...props} />);
   },
 });

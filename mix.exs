@@ -73,7 +73,7 @@ defmodule Momentum.MixProject do
         "esbuild.install --if-missing",
         "cmd npm install --prefix assets"
       ],
-      "assets.build": ["tailwind momentum", "esbuild momentum"],
+      "assets.build": ["tailwind momentum", "esbuild momentum", "esbuild ssr"],
       "assets.deploy": [
         "tailwind momentum --minify",
         "esbuild momentum --minify",

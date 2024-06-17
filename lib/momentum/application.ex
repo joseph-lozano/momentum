@@ -16,7 +16,8 @@ defmodule Momentum.Application do
       # Start a worker by calling: Momentum.Worker.start_link(arg)
       # {Momentum.Worker, arg},
       # Start to serve requests, typically the last entry
-      MomentumWeb.Endpoint
+      MomentumWeb.Endpoint,
+      {Inertia.SSR, path: Path.join([Application.app_dir(:momentum), "priv"])}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
