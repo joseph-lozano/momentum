@@ -1,4 +1,3 @@
-
 import ReactDOMServer from "react-dom/server";
 import { createInertiaApp } from "@inertiajs/react";
 import pages from "./pages";

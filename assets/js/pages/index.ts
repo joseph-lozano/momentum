@@ -1,7 +1,7 @@
 import { HomePage } from "./HomePage";
 
 const pages = {
-    HomePage
+  HomePage,
 };
 
 export default pages;
