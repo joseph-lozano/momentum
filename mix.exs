@@ -54,7 +54,8 @@ defmodule Momentum.MixProject do
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
-      {:bandit, "~> 1.2"}
+      {:bandit, "~> 1.2"},
+      {:inertia, "~> 0.7.0"}
     ]
   end
 
@@ -67,7 +68,11 @@ defmodule Momentum.MixProject do
   defp aliases do
     [
       setup: ["deps.get", "assets.setup", "assets.build"],
-      "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
+      "assets.setup": [
+        "tailwind.install --if-missing",
+        "esbuild.install --if-missing",
+        "cmd npm install --prefix assets"
+      ],
       "assets.build": ["tailwind momentum", "esbuild momentum"],
       "assets.deploy": [
         "tailwind momentum --minify",

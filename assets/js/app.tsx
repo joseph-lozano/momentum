@@ -18,11 +18,16 @@
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import "phoenix_html"
 // Establish Phoenix Socket and LiveView configuration.
+// @ts-ignore
 import {Socket} from "phoenix"
+// @ts-ignore
 import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
+import { createInertiaApp } from "@inertiajs/react";
+import { createRoot } from "react-dom/client";
+import pages from "./pages";
 
-let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
+let csrfToken = document.querySelector("meta[name='csrf-token']")?.getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken}
@@ -42,3 +47,18 @@ liveSocket.connect()
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket
 
+
+declare global {
+  interface Window {
+    liveSocket: LiveSocket
+  }
+}
+
+createInertiaApp({
+  resolve: (name) => {
+    return pages[name as keyof typeof pages];
+  },
+  setup({ el, App, props }) {
+    createRoot(el).render(<App {...props} />);
+  },
+});
