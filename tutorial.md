@@ -396,3 +396,73 @@ createInertiaApp({
 Finally, let's talk about the steps we need to take to deploy our app.
 
 First, we run the `mix phx.gen.release --docker` command to generate a Pheonix release and Dockerfile.
+
+## Getting Inertia to work in a deployed setting
+
+Let's add our ssr build step to `assets.deploy`
+
+```elixir
+# mix.exs
+defp aliases do
+  [
+    setup: # ... unchanged
+    "assets.setup": # ...unchanged  
+    "assets.build": # ...unchanged
+    "assets.deploy": [
+      "tailwind momentum --minify",
+      "esbuild momentum --minify",
+      "esbuild ssr --minify", # <-- Add this line
+      "phx.digest"
+    ],
+  ]
+end
+```
+
+We need to update our Dockerfile to include `node` in both our build and run stages.
+
+```dockerfile
+# ...
+
+FROM ${BUILDER_IMAGE} as builder
+
+# Add `curl` to our dependencies
+RUN apt-get update -y && apt-get install -y build-essential git curl \ 
+    && apt-get clean && rm -f /var/lib/apt/lists/*_*
+
+# Download and install NodeJS
+RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
+RUN apt-get install -y nodejs
+
+# ...
+
+# Before we compile our assets, we should install our frontend dependencies
+RUN npm install --prefix assets
+RUN mix assets.deploy
+
+# ...
+
+# Also install node in our release stage
+
+FROM ${RUNNER_IMAGE}
+
+# Add `curl` to our release stage dependencies
+RUN apt-get update -y && \
+  apt-get install -y libstdc++6 openssl libncurses5 locales ca-certificates curl \
+  && apt-get clean && rm -f /var/lib/apt/lists/*_*
+
+# Download and install NodeJS
+RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
+RUN apt-get install -y nodejs
+
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
+
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+# We also should set the `NODE_ENV` environment variable to `production`
+ENV NODE_ENV="production"
+```
+
+__Don't miss setting the `NODE_ENV` environment variable to `production` in the release stage.__
+
+

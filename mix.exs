@@ -77,6 +77,7 @@ defmodule Momentum.MixProject do
       "assets.deploy": [
         "tailwind momentum --minify",
         "esbuild momentum --minify",
+        "esbuild ssr --minify",
         "phx.digest"
       ]
     ]
