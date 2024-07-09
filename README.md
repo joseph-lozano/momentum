@@ -73,6 +73,7 @@ defmodule MomentumWeb do
   #... other helpers
 
 end
+```
 
 
 In your router file, add the Inertia plug to the pipeline
